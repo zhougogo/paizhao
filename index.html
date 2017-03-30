@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+
+	<body>
+		<input id="btn_select" type="button" value="从相册选择" />
+		<input id="btn_takephoto" type="button" value="拍照" />
+		<img id="imgViewer" src="" alt="暂无图片" width="100" height="100" />
+		<input id="btn_save" type="button" value="确认上传" />
+	</body>
+	<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+	<script>
+		(function() {
+			var url = "XXXXXXXXXX上传的文件地址";
+
+			var file;
+			var w = null;
+			// H5 plus事件处理
+			function plusReady() {
+
+				//w=plus.nativeUI.showWaiting();
+				//H5 准备好的时候 绑定拍照事件
+
+				//拍照单机事件
+				$("#btn_takephoto").bind("click", function() {
+					//拍照
+					plus.camera.getCamera().captureImage(function(p) {
+						plus.io.resolveLocalFileSystemURL(p, function(entry) {
+							console.log(entry.toLocalURL());
+							$("#imgViewer").attr("src", entry.toLocalURL());
+						}, function(e) {
+							outLine("读取拍照文件错误：" + e.message);
+						});
+
+					});
+				});
+
+				//从相册选择
+				$("#btn_select").bind("click", function() {
+					plus.gallery.pick(function(p) {
+						console.log(p);
+						$("#imgViewer").attr("src", p);
+					});
+				});
+
+				//上传文件
+				$("#btn_save").bind("click", function() {
+					var wt = plus.nativeUI.showWaiting();
+					//根据路径读取到文件
+					plus.io.resolveLocalFileSystemURL($("#imgViewer").attr("src"), function(entry) {
+						entry.file(function(file) {
+							var fileReader = new plus.io.FileReader();
+							fileReader.readAsDataURL(file);
+
+							fileReader.onloadend = function(e) {
+								var f = $("#imgViewer").attr("src");
+								var filename = f.replace(f.substring(0, f.lastIndexOf('/') + 1), '');
+								var param = {
+									fileName: filename,
+									dataInput: e.target.result.toString()
+								};
+								//自定义的ajax方法 
+								ToolHelper.AsyncAjax(url, param, function(data, para) {
+									wt.close();
+									if(data[0].responseCode != undefined && data[0].responseCode != "") {
+										$.dialog.alert(data[0].responseMessage);
+									} else {
+										$.dialog.alert("上传成功");
+									}
+								});
+							}
+
+						});
+					});
+
+				});
+			}
+//			if(window.plus) {
+//				plusReady();
+//			} else {
+//				document.addEventListener("plusready", plusReady, false);
+//			}
+//
+//			return BaseObj = {
+//				save: saveEdit
+//			};
+		})();
+	</script>
+
+</html>
